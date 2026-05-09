@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "PowerShell(cd \"C:\\\\Users\\\\Dell Latitude 5430\\\\OneDrive\\\\Documents\\\\Projects\\\\bordercross2\"; Start-Process -NoNewWindow -FilePath \"npm\" -ArgumentList \"run\",\"dev\" -RedirectStandardOutput \"$env:TEMP\\\\nextdev.log\" -RedirectStandardError \"$env:TEMP\\\\nextdev_err.log\")",
+      "PowerShell(Get-Command *)"
+    ]
+  }
+}
