@@ -9,16 +9,20 @@ import { formatCurrency } from '@/lib/utils/currency'
 import { Users } from 'lucide-react'
 import type { Profile, CreditWallet } from '@/lib/types'
 
-interface AgentRow extends Profile {
+export interface AgentRow extends Profile {
   wallet?: CreditWallet | null
   parent?: Pick<Profile, 'full_name'> | null
+  insurer?: { name: string } | null
+  border_post?: { name: string } | null
 }
 
 interface AgentTableProps {
   agents: AgentRow[]
+  /** platform admins see agents of every insurer */
+  showInsurer?: boolean
 }
 
-export function AgentTable({ agents }: AgentTableProps) {
+export function AgentTable({ agents, showInsurer }: AgentTableProps) {
   if (!agents.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -29,17 +33,16 @@ export function AgentTable({ agents }: AgentTableProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-white overflow-hidden">
+    <div className="rounded-lg border bg-white overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-50">
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
+            {showInsurer && <TableHead>Insurer</TableHead>}
+            <TableHead>Border Post</TableHead>
             <TableHead>Parent</TableHead>
-            <TableHead>MZN Balance</TableHead>
-            <TableHead>ZAR Balance</TableHead>
-            <TableHead>USD Balance</TableHead>
+            <TableHead>Balance</TableHead>
             <TableHead>Commission</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
@@ -56,15 +59,12 @@ export function AgentTable({ agents }: AgentTableProps) {
                 </Link>
               </TableCell>
               <TableCell className="text-sm text-gray-600">{agent.email}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="capitalize">{agent.role}</Badge>
-              </TableCell>
+              {showInsurer && <TableCell className="text-sm">{agent.insurer?.name ?? '—'}</TableCell>}
+              <TableCell className="text-sm">{agent.border_post?.name ?? <span className="text-gray-400">Not assigned</span>}</TableCell>
               <TableCell className="text-sm text-gray-500">
                 {agent.parent?.full_name ?? '—'}
               </TableCell>
-              <TableCell>{formatCurrency(agent.wallet?.balance_mzn ?? 0, 'MZN')}</TableCell>
-              <TableCell>{formatCurrency(agent.wallet?.balance_zar ?? 0, 'ZAR')}</TableCell>
-              <TableCell>{formatCurrency(agent.wallet?.balance_usd ?? 0, 'USD')}</TableCell>
+              <TableCell>{formatCurrency(agent.wallet?.balance_mzn ?? 0)}</TableCell>
               <TableCell>{agent.commission_rate}%</TableCell>
               <TableCell>
                 <Badge className={agent.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}>

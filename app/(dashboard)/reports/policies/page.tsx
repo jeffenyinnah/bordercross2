@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PolicyTable } from '@/components/policies/PolicyTable'
@@ -7,18 +6,14 @@ import { Input } from '@/components/ui/input'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/currency'
-import type { Currency, PolicyStatus } from '@/lib/types'
+import type { PolicyStatus } from '@/lib/types'
 
 interface PageProps {
-  searchParams: Promise<{ from?: string; to?: string; type?: string; status?: string; currency?: string }>
+  searchParams: Promise<{ from?: string; to?: string; type?: string; status?: string; method?: string }>
 }
 
 export default async function PolicyReportPage({ searchParams }: PageProps) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   const filters = await searchParams
 
   let query = supabase
@@ -29,19 +24,21 @@ export default async function PolicyReportPage({ searchParams }: PageProps) {
 
   if (filters.status) query = query.eq('status', filters.status as PolicyStatus)
   if (filters.type) query = query.eq('policy_type', filters.type)
-  if (filters.currency) query = query.eq('currency', filters.currency as Currency)
+  if (filters.method) query = query.eq('payment_method', filters.method)
   if (filters.from) query = query.gte('created_at', filters.from)
   if (filters.to) query = query.lte('created_at', filters.to + 'T23:59:59')
 
   const { data: policies } = await query
 
   const total = policies?.length ?? 0
-  const revenue: Record<Currency, number> = { MZN: 0, ZAR: 0, USD: 0 }
   const statusCounts: Record<PolicyStatus, number> = { active: 0, expired: 0, cancelled: 0 }
+  const revenue = { all: 0, VIRTUAL_CREDIT: 0, POS_CARD_SLIP: 0 }
 
   policies?.forEach((p) => {
-    revenue[p.currency as Currency] += p.premium_amount
     statusCounts[p.status as PolicyStatus]++
+    if (p.status === 'cancelled') return
+    revenue.all += Number(p.premium_amount)
+    revenue[p.payment_method as 'VIRTUAL_CREDIT' | 'POS_CARD_SLIP'] += Number(p.premium_amount)
   })
 
   return (
@@ -53,11 +50,15 @@ export default async function PolicyReportPage({ searchParams }: PageProps) {
             <div className="text-sm text-gray-500">Total Policies</div>
           </CardContent>
         </Card>
-        {(['MZN', 'ZAR', 'USD'] as Currency[]).map((cur) => (
-          <Card key={cur}>
+        {([
+          ['all', 'Premium (excl. cancelled)'],
+          ['VIRTUAL_CREDIT', 'Paid by virtual credit'],
+          ['POS_CARD_SLIP', 'Paid by card'],
+        ] as const).map(([key, label]) => (
+          <Card key={key}>
             <CardContent className="pt-4">
-              <div className="text-xl font-bold text-brand">{formatCurrency(revenue[cur], cur)}</div>
-              <div className="text-sm text-gray-500">Revenue ({cur})</div>
+              <div className="text-xl font-bold text-brand">{formatCurrency(revenue[key])}</div>
+              <div className="text-sm text-gray-500">{label}</div>
             </CardContent>
           </Card>
         ))}
@@ -77,17 +78,16 @@ export default async function PolicyReportPage({ searchParams }: PageProps) {
           <option value="expired">Expired</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <select name="currency" defaultValue={filters.currency || ''} className="border rounded-md px-3 py-2 text-sm bg-white">
-          <option value="">All Currencies</option>
-          <option value="MZN">MZN</option>
-          <option value="ZAR">ZAR</option>
-          <option value="USD">USD</option>
+        <select name="method" defaultValue={filters.method || ''} className="border rounded-md px-3 py-2 text-sm bg-white">
+          <option value="">All Payments</option>
+          <option value="VIRTUAL_CREDIT">Virtual credit</option>
+          <option value="POS_CARD_SLIP">Card (POS)</option>
         </select>
         <Button type="submit" variant="outline">Filter</Button>
         <Link href="/reports/policies" className={cn(buttonVariants({ variant: 'ghost' }))}>Clear</Link>
       </form>
 
-      <PolicyTable policies={(policies ?? []) as Parameters<typeof PolicyTable>[0]['policies']} showAgent={profile?.role === 'admin'} />
+      <PolicyTable policies={(policies ?? []) as Parameters<typeof PolicyTable>[0]['policies']} showAgent />
     </div>
   )
 }

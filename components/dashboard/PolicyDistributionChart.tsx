@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -24,9 +24,9 @@ export function PolicyDistributionChart({ data }: PolicyDistributionChartProps) 
 
   const COLORS = ['#2563eb', '#1e40af']
 
-  const renderLabel = (entry: any) => {
+  const renderLabel = (entry: { value?: number }) => {
     if (total === 0) return '0%'
-    const percentage = ((entry.value / total) * 100).toFixed(1)
+    const percentage = (((entry.value ?? 0) / total) * 100).toFixed(1)
     return `${percentage}%`
   }
 
@@ -49,7 +49,7 @@ export function PolicyDistributionChart({ data }: PolicyDistributionChartProps) 
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: any) => [`${value} policies`, 'Count']}
+            formatter={(value: unknown) => [`${value} policies`, 'Count']}
             contentStyle={{ backgroundColor: '#f3f4f6', border: 'none', borderRadius: '8px' }}
           />
           <Legend />

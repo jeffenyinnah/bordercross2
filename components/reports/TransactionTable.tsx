@@ -5,12 +5,14 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CurrencyBadge } from '@/components/shared/CurrencyBadge'
 import { formatDateTime } from '@/lib/utils/dates'
 import { formatCurrency } from '@/lib/utils/currency'
 import { exportToCSV } from '@/lib/utils/csv'
 import { Download, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
 import type { CreditTransaction } from '@/lib/types'
+
+/** top-ups and released offline reserves add to the wallet; sales and reserves take from it */
+const isIn = (type: CreditTransaction['type']) => type === 'credit' || type === 'release'
 
 interface TransactionTableProps {
   transactions: (CreditTransaction & { agent?: { full_name: string } | null })[]
@@ -23,8 +25,7 @@ export function TransactionTable({ transactions, showAgent }: TransactionTablePr
       transactions.map((t) => ({
         Date: formatDateTime(t.created_at),
         Type: t.type,
-        Currency: t.currency,
-        Amount: t.amount,
+        Amount_MZN: t.amount,
         Balance_After: t.balance_after,
         Description: t.description ?? '',
         Agent: t.agent?.full_name ?? '',
@@ -50,7 +51,6 @@ export function TransactionTable({ transactions, showAgent }: TransactionTablePr
               <TableRow className="bg-gray-50">
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Currency</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Balance After</TableHead>
                 <TableHead>Description</TableHead>
@@ -64,12 +64,12 @@ export function TransactionTable({ transactions, showAgent }: TransactionTablePr
                   <TableCell>
                     <Badge
                       className={
-                        tx.type === 'credit'
+                        isIn(tx.type)
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }
                     >
-                      {tx.type === 'credit' ? (
+                      {isIn(tx.type) ? (
                         <ArrowUpCircle className="w-3 h-3 mr-1 inline" />
                       ) : (
                         <ArrowDownCircle className="w-3 h-3 mr-1 inline" />
@@ -77,13 +77,10 @@ export function TransactionTable({ transactions, showAgent }: TransactionTablePr
                       {tx.type}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <CurrencyBadge currency={tx.currency} />
-                  </TableCell>
                   <TableCell
-                    className={`font-medium ${tx.type === 'credit' ? 'text-green-700' : 'text-red-600'}`}
+                    className={`font-medium ${isIn(tx.type) ? 'text-green-700' : 'text-red-600'}`}
                   >
-                    {tx.type === 'credit' ? '+' : '-'}
+                    {isIn(tx.type) ? '+' : '-'}
                     {formatCurrency(tx.amount, tx.currency)}
                   </TableCell>
                   <TableCell>{formatCurrency(tx.balance_after, tx.currency)}</TableCell>

@@ -39,7 +39,7 @@ export function ExchangeRatesManager({ rates }: ExchangeRatesManagerProps) {
 
   function saveEdit(rate: ExchangeRate) {
     startTransition(async () => {
-      const result = await updateExchangeRate(rate.from_currency, rate.to_currency, Number(editValue))
+      const result = await updateExchangeRate(rate.from_currency, Number(editValue))
       if (result.success) {
         toast.success('Exchange rate updated')
         cancelEdit()
@@ -51,6 +51,11 @@ export function ExchangeRatesManager({ rates }: ExchangeRatesManagerProps) {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-gray-600 max-w-2xl">
+        Everything is priced, paid and accounted in meticais. These rates only show agents and
+        drivers what a premium is worth in rand or dollars when the driver pays cash. Card payments
+        are always charged in MZN on the POS terminal.
+      </p>
       {staleRates.length > 0 && (
         <Alert className="border-amber-300 bg-amber-50">
           <AlertTriangle className="w-4 h-4 text-amber-600" />
@@ -65,9 +70,8 @@ export function ExchangeRatesManager({ rates }: ExchangeRatesManagerProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead>From</TableHead>
-              <TableHead>To</TableHead>
-              <TableHead>Rate</TableHead>
+              <TableHead>Currency</TableHead>
+              <TableHead>1 unit in MZN</TableHead>
               <TableHead>Last Updated</TableHead>
               <TableHead className="w-32"></TableHead>
             </TableRow>
@@ -77,8 +81,7 @@ export function ExchangeRatesManager({ rates }: ExchangeRatesManagerProps) {
               const isStale = differenceInHours(new Date(), new Date(rate.updated_at)) > 24
               return (
                 <TableRow key={rate.id} className={isStale ? 'bg-amber-50' : ''}>
-                  <TableCell className="font-medium">{rate.from_currency}</TableCell>
-                  <TableCell>{rate.to_currency}</TableCell>
+                  <TableCell className="font-medium">{rate.from_currency === 'ZAR' ? 'South African rand (ZAR)' : 'US dollar (USD)'}</TableCell>
                   <TableCell>
                     {editId === rate.id ? (
                       <Input

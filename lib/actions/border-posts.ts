@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth'
 import type { ActionResult } from '@/lib/types'
 
 export async function upsertBorderPost(data: {
@@ -10,6 +11,9 @@ export async function upsertBorderPost(data: {
   code: string
   province?: string | null
 }): Promise<ActionResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
   const supabase = await createClient()
   const payload = { name: data.name, code: data.code.toUpperCase(), province: data.province || null }
 
@@ -26,6 +30,9 @@ export async function upsertBorderPost(data: {
 }
 
 export async function toggleBorderPostStatus(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
   const supabase = await createClient()
   const { data: post } = await supabase.from('border_posts').select('is_active').eq('id', id).single()
   if (!post) return { success: false, error: 'Not found' }
@@ -38,6 +45,9 @@ export async function toggleBorderPostStatus(id: string): Promise<ActionResult> 
 }
 
 export async function deleteBorderPost(id: string): Promise<ActionResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('border_posts').delete().eq('id', id)
   if (error) return { success: false, error: error.message }

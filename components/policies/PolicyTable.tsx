@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { CurrencyBadge } from '@/components/shared/CurrencyBadge'
+import { PaymentMethodBadge } from '@/components/shared/PaymentBadges'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatDate } from '@/lib/utils/dates'
 import { formatCurrency } from '@/lib/utils/currency'
@@ -42,8 +42,8 @@ export function PolicyTable({ policies, showAgent }: PolicyTableProps) {
             <TableHead>Client</TableHead>
             <TableHead>Plate</TableHead>
             <TableHead>Type</TableHead>
-            <TableHead>Currency</TableHead>
             <TableHead>Premium</TableHead>
+            <TableHead>Payment</TableHead>
             {showAgent && <TableHead>Agent</TableHead>}
             <TableHead>Start</TableHead>
             <TableHead>End</TableHead>
@@ -64,10 +64,10 @@ export function PolicyTable({ policies, showAgent }: PolicyTableProps) {
               <TableCell className="max-w-[150px] truncate">{policy.client_name}</TableCell>
               <TableCell className="font-mono text-sm">{policy.plate_number}</TableCell>
               <TableCell className="capitalize">{policy.policy_type}</TableCell>
-              <TableCell>
-                <CurrencyBadge currency={policy.currency} />
-              </TableCell>
               <TableCell>{formatCurrency(policy.premium_amount, policy.currency)}</TableCell>
+              <TableCell>
+                <PaymentMethodBadge method={policy.payment_method} />
+              </TableCell>
               {showAgent && (
                 <TableCell className="text-sm text-gray-600">
                   {policy.agent?.full_name ?? '—'}

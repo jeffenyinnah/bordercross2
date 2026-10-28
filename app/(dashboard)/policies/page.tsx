@@ -1,26 +1,18 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PolicyTable } from '@/components/policies/PolicyTable'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FilePlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { STAFF_ROLES, requirePageRole } from '@/lib/auth'
 
 interface PageProps {
-  searchParams: Promise<{ search?: string; status?: string; type?: string; currency?: string }>
+  searchParams: Promise<{ search?: string; status?: string; type?: string; method?: string }>
 }
 
 export default async function PoliciesPage({ searchParams }: PageProps) {
+  await requirePageRole(STAFF_ROLES)
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
 
   const filters = await searchParams
 
@@ -32,10 +24,12 @@ export default async function PoliciesPage({ searchParams }: PageProps) {
 
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.type) query = query.eq('policy_type', filters.type)
-  if (filters.currency) query = query.eq('currency', filters.currency)
-  if (filters.search) {
+  if (filters.method) query = query.eq('payment_method', filters.method)
+  // Strip PostgREST filter syntax so user input can't alter the .or() expression
+  const search = filters.search?.replace(/[,()*%\:"']/g, ' ').trim()
+  if (search) {
     query = query.or(
-      `policy_number.ilike.%${filters.search}%,client_name.ilike.%${filters.search}%,plate_number.ilike.%${filters.search}%`
+      `policy_number.ilike.%${search}%,client_name.ilike.%${search}%,plate_number.ilike.%${search}%`
     )
   }
 
@@ -50,10 +44,6 @@ export default async function PoliciesPage({ searchParams }: PageProps) {
             {policies?.length ?? 0} policies found
           </p>
         </div>
-        <Link href="/policies/new" className={cn(buttonVariants(), 'bg-brand hover:bg-brand/90')}>
-          <FilePlus className="w-4 h-4 mr-2" />
-          New Policy
-        </Link>
       </div>
 
       <form method="get" className="flex gap-3 flex-wrap">
@@ -83,20 +73,19 @@ export default async function PoliciesPage({ searchParams }: PageProps) {
           <option value="annual">Annual</option>
         </select>
         <select
-          name="currency"
-          defaultValue={filters.currency || ''}
+          name="method"
+          defaultValue={filters.method || ''}
           className="border rounded-md px-3 py-2 text-sm bg-white"
         >
-          <option value="">All Currencies</option>
-          <option value="MZN">MZN</option>
-          <option value="ZAR">ZAR</option>
-          <option value="USD">USD</option>
+          <option value="">All Payments</option>
+          <option value="VIRTUAL_CREDIT">Virtual credit</option>
+          <option value="POS_CARD_SLIP">Card (POS)</option>
         </select>
         <Button type="submit" variant="outline">Filter</Button>
         <Link href="/policies" className={cn(buttonVariants({ variant: 'ghost' }))}>Clear</Link>
       </form>
 
-      <PolicyTable policies={policies ?? []} showAgent={profile?.role === 'admin'} />
+      <PolicyTable policies={policies ?? []} showAgent />
     </div>
   )
 }

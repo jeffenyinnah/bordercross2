@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { formatCurrency } from '@/lib/utils/currency'
-import type { VehicleType, Currency } from '@/lib/types'
+import { priceFor } from '@bordercross/core'
+import type { VehicleType } from '@/lib/types'
 
 interface VehicleTypeTableProps {
   vehicleTypes: VehicleType[]
-  currency: Currency
   policyType: 'monthly' | 'annual'
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
@@ -15,28 +14,13 @@ interface VehicleTypeTableProps {
 
 export function VehicleTypeTable({
   vehicleTypes,
-  currency,
   policyType,
   selectedIds,
   onSelectionChange,
 }: VehicleTypeTableProps) {
   const totalPrice = vehicleTypes
     .filter((vt) => selectedIds.includes(vt.id) && vt.is_active)
-    .reduce((sum, vt) => {
-      const price =
-        policyType === 'annual'
-          ? currency === 'MZN'
-            ? vt.price_mzn_annual
-            : currency === 'ZAR'
-              ? vt.price_zar_annual
-              : vt.price_usd_annual
-          : currency === 'MZN'
-            ? vt.price_mzn
-            : currency === 'ZAR'
-              ? vt.price_zar
-              : vt.price_usd
-      return sum + (price || 0)
-    }, 0)
+    .reduce((sum, vt) => sum + (priceFor(vt, policyType) ?? 0), 0)
 
   const handleToggle = (vehicleTypeId: string) => {
     if (selectedIds.includes(vehicleTypeId)) {
@@ -46,19 +30,8 @@ export function VehicleTypeTable({
     }
   }
 
-  const activeVehicleTypes = vehicleTypes.filter((vt) => {
-    if (!vt.is_active) return false
-    if (policyType === 'annual') {
-      const annualPrice =
-        currency === 'MZN'
-          ? vt.price_mzn_annual
-          : currency === 'ZAR'
-            ? vt.price_zar_annual
-            : vt.price_usd_annual
-      return annualPrice !== null && annualPrice !== undefined
-    }
-    return true
-  })
+  // annual cover is only offered for types with an annual price
+  const activeVehicleTypes = vehicleTypes.filter((vt) => vt.is_active && priceFor(vt, policyType) != null)
 
   return (
     <div className="space-y-3">
@@ -84,23 +57,12 @@ export function VehicleTypeTable({
                 />
               </th>
               <th className="flex-1 px-4 py-3 text-left font-medium text-gray-700">Vehicle Type</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-700">Value ({currency})</th>
+              <th className="px-4 py-3 text-right font-medium text-gray-700">Price (MZN)</th>
             </tr>
           </thead>
           <tbody>
             {activeVehicleTypes.map((vt) => {
-              const price =
-                policyType === 'annual'
-                  ? currency === 'MZN'
-                    ? vt.price_mzn_annual
-                    : currency === 'ZAR'
-                      ? vt.price_zar_annual
-                      : vt.price_usd_annual
-                  : currency === 'MZN'
-                    ? vt.price_mzn
-                    : currency === 'ZAR'
-                      ? vt.price_zar
-                      : vt.price_usd
+              const price = priceFor(vt, policyType)
               return (
                 <tr
                   key={vt.id}
@@ -116,7 +78,7 @@ export function VehicleTypeTable({
                   </td>
                   <td className="px-4 py-3 text-gray-900 font-medium">{vt.name}</td>
                   <td className="px-4 py-3 text-right text-gray-900 font-medium">
-                    {formatCurrency(price || 0, currency)}
+                    {formatCurrency(price ?? 0)}
                   </td>
                 </tr>
               )
@@ -128,18 +90,7 @@ export function VehicleTypeTable({
       {/* Mobile card view */}
       <div className="sm:hidden space-y-2">
         {activeVehicleTypes.map((vt) => {
-          const price =
-            policyType === 'annual'
-              ? currency === 'MZN'
-                ? vt.price_mzn_annual
-                : currency === 'ZAR'
-                  ? vt.price_zar_annual
-                  : vt.price_usd_annual
-              : currency === 'MZN'
-                ? vt.price_mzn
-                : currency === 'ZAR'
-                  ? vt.price_zar
-                  : vt.price_usd
+          const price = priceFor(vt, policyType)
           return (
             <div
               key={vt.id}
@@ -156,7 +107,7 @@ export function VehicleTypeTable({
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900">{vt.name}</div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {formatCurrency(price || 0, currency)}
+                    {formatCurrency(price ?? 0)}
                   </div>
                 </div>
               </div>
@@ -167,7 +118,7 @@ export function VehicleTypeTable({
 
       <div className="bg-blue-50 border border-brand/20 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <span className="font-medium text-brand">TOTAL:</span>
-        <span className="text-lg font-bold text-brand">{formatCurrency(totalPrice, currency)}</span>
+        <span className="text-lg font-bold text-brand">{formatCurrency(totalPrice)}</span>
       </div>
     </div>
   )

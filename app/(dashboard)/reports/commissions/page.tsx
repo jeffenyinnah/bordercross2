@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { CommissionTable } from '@/components/reports/CommissionTable'
@@ -12,10 +11,6 @@ interface PageProps {
 
 export default async function CommissionsPage({ searchParams }: PageProps) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   const filters = await searchParams
 
   let query = supabase
@@ -24,7 +19,6 @@ export default async function CommissionsPage({ searchParams }: PageProps) {
     .order('created_at', { ascending: false })
     .limit(500)
 
-  if (profile?.role !== 'admin') query = query.eq('agent_id', user.id)
   if (filters.type) query = query.eq('commission_type', filters.type)
   if (filters.from) query = query.gte('created_at', filters.from)
   if (filters.to) query = query.lte('created_at', filters.to + 'T23:59:59')

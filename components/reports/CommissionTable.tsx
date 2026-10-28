@@ -5,7 +5,6 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CurrencyBadge } from '@/components/shared/CurrencyBadge'
 import { formatDate } from '@/lib/utils/dates'
 import { formatCurrency } from '@/lib/utils/currency'
 import { exportToCSV } from '@/lib/utils/csv'
@@ -24,8 +23,7 @@ export function CommissionTable({ commissions }: CommissionTableProps) {
         Policy: c.policy?.policy_number ?? '',
         Type: c.commission_type,
         Rate: c.rate,
-        Amount: c.amount,
-        Currency: c.currency,
+        Amount_MZN: c.amount,
         Date: formatDate(c.created_at),
       })),
       'commissions'
@@ -52,7 +50,6 @@ export function CommissionTable({ commissions }: CommissionTableProps) {
                 <TableHead>Type</TableHead>
                 <TableHead>Rate</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Currency</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
@@ -75,9 +72,6 @@ export function CommissionTable({ commissions }: CommissionTableProps) {
                   <TableCell>{c.rate}%</TableCell>
                   <TableCell className="font-medium text-green-700">
                     {formatCurrency(c.amount, c.currency)}
-                  </TableCell>
-                  <TableCell>
-                    <CurrencyBadge currency={c.currency} />
                   </TableCell>
                   <TableCell className="text-sm text-gray-500">{formatDate(c.created_at)}</TableCell>
                 </TableRow>

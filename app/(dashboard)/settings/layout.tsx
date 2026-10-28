@@ -1,21 +1,14 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requirePageRole } from '@/lib/auth'
 import { NavTabs } from '@/components/shared/NavTabs'
 
 const SETTINGS_TABS = [
-  { label: 'Vehicle Types', href: '/settings/vehicle-types' },
-  { label: 'Exchange Rates', href: '/settings/exchange-rates' },
-  { label: 'Commissions', href: '/settings/commissions' },
+  { label: 'Default Price List', href: '/settings/vehicle-types' },
+  { label: 'Reference Rates', href: '/settings/exchange-rates' },
   { label: 'Border Posts', href: '/settings/border-posts' },
 ]
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  await requirePageRole(['admin'])
 
   return (
     <div className="space-y-5">
