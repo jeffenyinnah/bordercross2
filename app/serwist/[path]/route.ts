@@ -6,6 +6,8 @@ const revision = crypto.randomUUID()
 
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } = createSerwistRoute({
   swSrc: 'sw/agent-sw.ts',
+  // Serwist defaults to esbuild-wasm off Windows (e.g. on Vercel); we ship native esbuild only
+  useNativeEsbuild: true,
   additionalPrecacheEntries: [{ url: '/agent', revision }],
   globPatterns: [
     '.next/static/**/*.{js,css,woff2,png,svg,webp,ico,json}',
